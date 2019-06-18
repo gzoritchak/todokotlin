@@ -1,0 +1,40 @@
+apply plugin: 'kotlin-platform-js'
+apply plugin: 'kotlinx-serialization'
+
+dependencies {
+    expectedBy project(":common")
+    compile "org.jetbrains.kotlin:kotlin-stdlib-js:$kotlin_version"
+    compile "org.jetbrains.kotlinx:kotlinx-html-js:$kotlinx_html_version"
+    compile "org.jetbrains.kotlinx:kotlinx-serialization-runtime-js:$kotlin_serializable_version"
+    compile "io.ktor:ktor-client-js:$ktor_version"
+    testCompile "org.jetbrains.kotlin:kotlin-test-js:$kotlin_version"
+}
+compileKotlin2Js {
+    kotlinOptions {
+        metaInfo = true
+        sourceMap = true
+        sourceMapEmbedSources = "always"
+        moduleKind = 'umd'
+        main = "call"
+        freeCompilerArgs += ["-XXLanguage:+InlineClasses"]
+    }
+}
+
+task populateWebFolder(dependsOn: [compileKotlin2Js]) {
+    doLast {
+        copy {
+            from compileKotlin2Js.destinationDir
+            from kotlin.sourceSets.main.resources.srcDirs
+            configurations.compile.each {
+                from zipTree(it.absolutePath).matching {
+                    include '*.js'
+                    include '*.js.map'
+                }
+            }
+            into '../data/public'
+        }
+    }
+}
+
+build.dependsOn(populateWebFolder)
+

@@ -1,0 +1,5 @@
+rootProject.name = 'play.data2viz.io'
+
+include(":jvm")
+include(":common")
+include(":js")

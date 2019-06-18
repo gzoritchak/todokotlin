@@ -1,0 +1,17 @@
+#idea
+.idea/
+
+#node
+front/node_modules/
+
+front/dist/
+
+# development files
+/src/main/resources/public/index.html
+
+/.gradle/
+/build/
+
+backend/storage/*
+storage/
+kotlinx.dnq.test.2
