@@ -1,8 +1,7 @@
 package io.data2viz.todo
 
-import com.fasterxml.jackson.databind.SerializationFeature
-import io.data2viz.play.web.model.State
 import io.data2viz.play.web.model.ToDo
+import io.data2viz.play.web.model.TodoAppState
 import io.data2viz.play.web.views.todoFooter
 import io.data2viz.play.web.views.todoHeader
 import io.data2viz.play.web.views.todoMain
@@ -10,17 +9,14 @@ import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.features.CallLogging
-import io.ktor.features.ContentNegotiation
 import io.ktor.features.StatusPages
 import io.ktor.html.respondHtml
 import io.ktor.http.content.files
 import io.ktor.http.content.static
-import io.ktor.jackson.jackson
 import io.ktor.routing.get
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
-import io.ktor.sessions.Sessions
 import io.ktor.util.KtorExperimentalAPI
 import kotlinx.html.*
 import kotlinx.serialization.json.Json
@@ -39,17 +35,10 @@ fun main() {
 @KtorExperimentalAPI
 @Suppress("unused") //used by application.conf
 fun Application.mainModule() {
-
     install(CallLogging) {
         level = Level.INFO
     }
     install(StatusPages)
-    install(Sessions)
-    install(ContentNegotiation) {
-        jackson {
-            configure(SerializationFeature.INDENT_OUTPUT, true)
-        }
-    }
     routing {
 
         get("/") {
@@ -65,27 +54,24 @@ fun Application.mainModule() {
 
 }
 
-val state = State(
+val serverState = TodoAppState(
     listOf(
         ToDo("Share views", true),
+        ToDo("Share state between server and client", true),
         ToDo("Set completed"),
-        ToDo("Add todo"),
-        ToDo("Share state between server and client")
+        ToDo("Add todo")
     )
 )
-
 
 private fun HTML.pageBody() {
     body {
         section("todoapp") {
-            todoHeader(state)
-            todoMain(state)
-            todoFooter(state)
+            todoHeader(serverState)
+            todoMain(serverState)
+            todoFooter(serverState)
         }
-        includeJs()
-
         val json = Json(JsonConfiguration.Stable)
-        val jsonData = json.stringify(State.serializer(), state).replace("<", "\\\\u003c")
+        val jsonData = json.stringify(TodoAppState.serializer(), serverState)
 
         script {
             unsafe {
@@ -96,7 +82,7 @@ private fun HTML.pageBody() {
             """
             }
         }
-
+        includeJs()
     }
 }
 
@@ -114,10 +100,6 @@ private fun HTML.pageHead() {
             content = "#000000"
         }
         link {
-            rel = "shortcut icon"
-            href = "favicon.ico"
-        }
-        link {
             rel = "stylesheet"
             href = "index.css"
         }
@@ -131,14 +113,11 @@ private fun HTML.pageHead() {
         script {
             +"require.config({baseUrl: '/'});\n"
         }
-
     }
 }
 
-
 fun FlowContent.includeJs() {
     val parentPackage = "js.io.data2viz.todo"
-
     script {
         +"require(['/js.js'], function(js) { console.log($parentPackage); });\n"
     }
