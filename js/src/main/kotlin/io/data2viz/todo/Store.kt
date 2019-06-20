@@ -25,7 +25,7 @@ object TodoAppStore : Store<TodoAppState, Action>(Json.parse(TodoAppState.serial
             is ActionAddTodo -> state.copy(todos = state.todos + ToDo(action.text))
             is ActionRemoveTodo -> state.copy(todos = state.todos - action.toDo)
             is ActionCompleteTodo -> {
-                val newTodoState = action.toDo.copy(completed = true)
+                val newTodoState = action.toDo.copy(completed = !action.toDo.completed)
                 val newTodos = state.todos.toMutableList()
                     .apply { set(state.todos.indexOf(action.toDo), newTodoState) }
                 state.copy(todos = newTodos)
