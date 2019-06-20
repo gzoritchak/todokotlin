@@ -1,20 +1,19 @@
-package io.data2viz.play.web.views
+package io.data2viz.play.todo
 
-import io.data2viz.play.web.model.State
-import io.data2viz.play.web.model.ToDo
 import kotlinx.html.*
 
 
-fun SECTION.todoHeader(state: State) {
+fun SECTION.todoHeader(state: TodoAppState) {
     header("header") {
         h1 { +"todos" }
         input(classes = "new-todo") {
             placeholder = "What needs to be done?"
+            value = state.newTodo
         }
     }
 }
 
-fun SECTION.todoMain(state: State) {
+fun SECTION.todoMain(state: TodoAppState) {
     section("main") {
         style = "display: block;"
         input(classes = "toggle-all") {
@@ -26,8 +25,8 @@ fun SECTION.todoMain(state: State) {
             +"Mark all as complete"
         }
         ul("todo-list") {
-            state.todos.forEach { toDo ->
-                todo(toDo)
+            state.filteredTodos
+                .forEach { toDo -> todo(toDo)
             }
         }
     }
@@ -51,32 +50,36 @@ private fun UL.todo(toDo: ToDo) {
 }
 
 
-fun SECTION.todoFooter(state: State) {
-    footer {
-        classes = setOf("footer")
+fun SECTION.todoFooter(state: TodoAppState) {
+    val itemLeft = state.todos.count { !it.completed }
+    val labelItemLeft = if (itemLeft > 1) " items left" else " item left"
+
+    fun linkClasses(visibilityFilter: VisibilityFilter) =
+        "visibility-filter" + if(state.visibilityFilter == visibilityFilter)
+            " selected" else ""
+
+    footer("footer") {
         style = "display: block;"
-        span {
-            classes = setOf("todo-count")
-            strong { + "${state.todos.count { !it.completed }}" }
-            +"item left"
+        span("todo-count") {
+            strong { + "$itemLeft" }
+            + labelItemLeft
         }
-        ul  {
-            classes = setOf("filters")
+        ul("filters")  {
             li {
-                a(classes = "selected") {
-                    href = "#/"
+                a(classes = linkClasses(VisibilityFilter.ALL)) {
+                    id = VisibilityFilter.ALL.name
                     +"All"
                 }
             }
             li {
-                a {
-                    href = "#/active"
+                a(classes = linkClasses(VisibilityFilter.ACTIVE)) {
+                    id = VisibilityFilter.ACTIVE.name
                     +"Active"
                 }
             }
             li {
-                a {
-                    href = "#/completed"
+                a(classes = linkClasses(VisibilityFilter.COMPLETED)) {
+                    id = VisibilityFilter.COMPLETED.name
                     +"Completed"
                 }
             }

@@ -1,10 +1,10 @@
 package io.data2viz.todo
 
-import io.data2viz.play.web.model.ToDo
-import io.data2viz.play.web.model.TodoAppState
-import io.data2viz.play.web.views.todoFooter
-import io.data2viz.play.web.views.todoHeader
-import io.data2viz.play.web.views.todoMain
+import io.data2viz.play.todo.ToDo
+import io.data2viz.play.todo.TodoAppState
+import io.data2viz.play.todo.todoFooter
+import io.data2viz.play.todo.todoHeader
+import io.data2viz.play.todo.todoMain
 import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.application.install
@@ -58,8 +58,9 @@ val serverState = TodoAppState(
     listOf(
         ToDo("Share views", true),
         ToDo("Share state between server and client", true),
-        ToDo("Set completed"),
-        ToDo("Add todo")
+        ToDo("Set completed", true),
+        ToDo("Add todo", true),
+        ToDo("Action with remote call")
     )
 )
 

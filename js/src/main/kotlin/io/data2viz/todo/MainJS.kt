@@ -1,93 +1,69 @@
 package io.data2viz.todo
 
-import io.data2viz.play.web.model.State
-import io.data2viz.play.web.model.ToDo
-import io.data2viz.play.web.views.todoFooter
-import io.data2viz.play.web.views.todoHeader
-import io.data2viz.play.web.views.todoMain
-import kotlinx.coroutines.withTimeout
-import kotlinx.html.TagConsumer
-import kotlinx.html.dom.JSDOMBuilder
-import kotlinx.html.dom.append
-import kotlinx.html.dom.create
+import io.data2viz.play.todo.*
 import kotlinx.html.js.section
-import kotlinx.serialization.json.Json
 import org.w3c.dom.*
 import kotlin.browser.document
 
-external val viewSharedState: String
 
 fun main() {
     println("starting client app")
-    val state = Json.parse(State.serializer(), viewSharedState)
-    bindEvents(state)
-    TodoApp.removeChildrenNode()
-    state.todos = state.todos + ToDo("Client side")
-    TodoApp.renderFromState(state)
+    TodoApp.init()
 }
 
-data class CompleteTodoAction(val toDo: ToDo)
+const val ENTER_KEY_CODE = 13
 
-object TodoApp {
-    val container = document.querySelector(".todoapp")!!
+object TodoApp: StateListener<TodoAppState> {
 
-    fun removeChildrenNode() {
-        while (container.firstElementChild != null) {
-            container.removeChild(container.firstElementChild!!)
+    private val container: Element = document.querySelector(".todoapp")!!
+
+    fun init() {
+        TodoAppStore.subscribe(this)
+        bindEvents(TodoAppStore.state)
+    }
+
+    override fun applyState(state: TodoAppState) {
+        renderFromState(state)
+    }
+
+    private fun renderFromState(state: TodoAppState) {
+        container.removeChildren()
+        container.appendChild(render.section { todoHeader(state)}.uniqueChild)
+        container.appendChild(render.section { todoMain(state)}.uniqueChild)
+        container.appendChild(render.section { todoFooter(state)}.uniqueChild)
+        bindEvents(state)
+    }
+
+    fun bindEvents(state: TodoAppState) {
+        val newTodo = container.querySelector("input.new-todo") as HTMLInputElement
+        newTodo.onkeypress = { evt ->
+            if (evt.keyCode == ENTER_KEY_CODE && newTodo.value.trim().isNotEmpty()) {
+                TodoAppStore.dispatch(ActionAddTodo(newTodo.value.trim()))
+            }
         }
-    }
 
-    fun renderFromState(state: State) {
-        container.appendChild(new.section { todoHeader(state)}.uniqueChild)
-        container.appendChild(new.section { todoMain(state)}.uniqueChild)
-        container.appendChild(new.section { todoFooter(state)}.uniqueChild)
-    }
+        val clearCompleted = container.querySelector("button.clear-completed") as HTMLButtonElement
+        clearCompleted.onclick = { TodoAppStore.dispatch(ActionClearCompleted)}
 
-}
-
-
-
-
-fun bindEvents(state: State) {
-
-    addEvents("input.completeTodo", state.todos) { todo ->
-        onclick = {
-            println("todo completed:: $todo")
-            CompleteTodoAction(todo)
+        addEvents("input.completeTodo", state.filteredTodos) { todo ->
+            onclick = { TodoAppStore.dispatch(ActionCompleteTodo(todo)) }
         }
-    }
-    addEvents("button.deleteTodo", state.todos) { todo ->
-        onclick = {
-            println("delete todo:: $todo")
-            CompleteTodoAction(todo)
+        addEvents("button.deleteTodo", state.filteredTodos) { todo ->
+            onclick = { TodoAppStore.dispatch(ActionRemoveTodo(todo)) }
         }
+
+        val visibilityLinks = container.querySelectorAll("a.visibility-filter").asList()
+        visibilityLinks.forEach {
+            console.log(it)
+            val link = it as HTMLElement
+            link.onclick = {
+                val filter = VisibilityFilter.valueOf(link.id)
+                println("$filter clicked")
+                TodoAppStore.dispatch(ActionSetVisibilityFilter(filter))
+            }
+        }
+
+        newTodo.focus()
     }
 
 }
-
-fun <D> addEvents(selector: String, data: List<D>, apply: HTMLElement.(D) -> Unit) {
-    val elements = document.querySelectorAll(selector).asList()
-    if (elements.size != data.size)
-        error("There should be as much selected element as data")
-
-    val zip = elements.zip(data)
-
-    zip.forEach {
-        val htmlElement = it.first as HTMLElement
-        apply(htmlElement, it.second)
-    }
-
-}
-
-private fun <T> String.selectElement(): T {
-    return document.querySelector(".$this") as T
-}
-
-val new : TagConsumer<HTMLElement>
-    get() = JSDOMBuilder(document)
-
-
-private val HTMLElement.uniqueChild: Node
-    get() {
-        return childNodes[0]!!
-    }

@@ -1,11 +1,9 @@
 package io.data2viz.todo
 
 
-
 interface StateListener<in S> {
 	fun applyState(state: S)
 }
-
 
 abstract class Store<State, in Action>(initialState: State) {
 
