@@ -48,7 +48,7 @@ fun Application.mainModule() {
             }
         }
         static("/") {
-            files("public")
+            files("data/public")
         }
     }
 
@@ -112,7 +112,9 @@ private fun HTML.pageHead() {
 
         script(src = "/require.min.js") {}
         script {
-            +"require.config({baseUrl: '/'});\n"
+            unsafe {
+                +"require.config({baseUrl: '/'});\n"
+            }
         }
     }
 }
@@ -120,6 +122,8 @@ private fun HTML.pageHead() {
 fun FlowContent.includeJs() {
     val parentPackage = "js.io.data2viz.todo"
     script {
-        +"require(['/js.js'], function(js) { console.log($parentPackage); });\n"
+        unsafe {
+            +"require(['/js.js'], function(js) { console.log($parentPackage); });\n"
+        }
     }
 }
