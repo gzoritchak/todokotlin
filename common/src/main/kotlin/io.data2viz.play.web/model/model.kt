@@ -16,7 +16,7 @@ enum class VisibilityFilter {
 
 @Serializable
 data class State(
-    val todos: List<ToDo> = listOf(),
+    var todos: List<ToDo> = listOf(),
     val visibilityFilter: VisibilityFilter = VisibilityFilter.SHOW_ALL
 )
 
