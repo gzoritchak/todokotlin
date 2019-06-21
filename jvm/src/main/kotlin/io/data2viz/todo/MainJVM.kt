@@ -11,9 +11,13 @@ import io.ktor.application.install
 import io.ktor.features.CallLogging
 import io.ktor.features.StatusPages
 import io.ktor.html.respondHtml
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.files
 import io.ktor.http.content.static
+import io.ktor.response.respond
+import io.ktor.routing.delete
 import io.ktor.routing.get
+import io.ktor.routing.route
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
@@ -23,6 +27,7 @@ import kotlinx.html.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
 import org.slf4j.event.Level
+import java.util.*
 
 
 @KtorExperimentalAPI
@@ -40,22 +45,34 @@ fun Application.mainModule() {
         level = Level.INFO
     }
     install(Sessions) {
-        cookie<String>("TodoAppState", SessionStorageMemory())
+        cookie<UserSession>("TodoAppState", SessionStorageMemory())
     }
     install(StatusPages)
     routing {
 
         get("/") {
-            val todoAppState = call.sessions.getOrSet { TodoAppState(
+            val userSession = call.sessions.getOrSet { TodoAppState(
                 listOf(
-                    ToDo("Share views", true),
-                    ToDo("Share state between server and client", true),
-                    ToDo("Action with remote call")
+                    ToDo("Share views", true, uuid()),
+                    ToDo("Share state between server and client", true, uuid()),
+                    ToDo("Action with remote call", false, uuid())
                 )
-            ).toJson() }
+            ).toSession() }
+
             call.respondHtml {
                 pageHead()
-                pageBody(todoAppState.jsonToTodoAppState())
+                pageBody(userSession.toTodoAppState())
+            }
+        }
+
+        route("todo") {
+            delete("/{uuid}"){
+                val todoAppState = call.sessions.get<UserSession>()!!.toTodoAppState()
+                val todo = todoAppState.todos.first { it.UUID == call.parameters["uuid"] }
+                val newTodos = todoAppState.todos - todo
+                todoAppState.copy(todos = newTodos)
+                call.sessions.set(todoAppState.toSession())
+                call.respond(HttpStatusCode.OK, "deleted")
             }
         }
         static("/") {
@@ -64,6 +81,8 @@ fun Application.mainModule() {
     }
 
 }
+
+private fun uuid() = UUID.randomUUID().toString()
 
 private fun HTML.pageBody(todoAppState: TodoAppState) {
     body {
@@ -129,9 +148,13 @@ fun FlowContent.includeJs() {
     }
 }
 
-fun TodoAppState.toJson(): String {
-    val json = Json(JsonConfiguration.Stable)
-    return  json.stringify(TodoAppState.serializer(), this)
+
+data class UserSession(val jsonAppState: String) {
+    fun toTodoAppState(): TodoAppState = Json.parse(TodoAppState.serializer(), jsonAppState)
 }
 
-fun String.jsonToTodoAppState(): TodoAppState = Json.parse(TodoAppState.serializer(), this)
+fun TodoAppState.toSession(): UserSession {
+    val json = Json(JsonConfiguration.Stable)
+    return  UserSession(json.stringify(TodoAppState.serializer(), this))
+}
+
