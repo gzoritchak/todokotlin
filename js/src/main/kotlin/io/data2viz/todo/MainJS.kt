@@ -9,9 +9,28 @@ import kotlin.browser.document
 fun main() {
     println("starting client app")
     TodoApp.init()
+    MessageApp.init()
+
 }
 
 const val ENTER_KEY_CODE = 13
+
+
+
+
+object MessageApp: PartialSubscriber.SubStateChangeListener<TodoAppState, List<String>> {
+
+    override fun getSubState(state: TodoAppState): List<String>  = state.messages
+
+    override fun onSubStateChanged(messages: List<String>) {
+        console.log(messages)
+    }
+
+    fun init() {
+        TodoAppStore.subscribe(PartialSubscriber(this))
+    }
+
+}
 
 object TodoApp: StateListener<TodoAppState> {
 
