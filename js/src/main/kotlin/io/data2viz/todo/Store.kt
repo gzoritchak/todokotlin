@@ -3,8 +3,8 @@ package io.data2viz.todo
 import io.data2viz.play.todo.TodoAppState
 import io.data2viz.play.todo.ToDo
 import io.data2viz.play.todo.VisibilityFilter
+import io.data2viz.todo.fwk.Store
 import kotlinx.serialization.json.Json
-
 
 //Actions
 sealed class Action
@@ -15,12 +15,14 @@ data class ActionRemoveTodo(val toDo: ToDo) : Action()
 data class ActionSetVisibilityFilter(val filter: VisibilityFilter) : Action()
 object ActionClearCompleted : Action()
 
+/**
+ * Server state serialized in the page
+ */
 external val viewSharedState: String
 
 object TodoAppStore : Store<TodoAppState, Action>(Json.parse(TodoAppState.serializer(), viewSharedState)) {
 
     override fun reducer(state: TodoAppState, action: Action): TodoAppState {
-
         return  when (action) {
             is ActionAddTodo -> state.copy(todos = state.todos + ToDo(action.text))
             is ActionRemoveTodo -> state.copy(todos = state.todos - action.toDo)

@@ -1,4 +1,4 @@
-package io.data2viz.todo
+package io.data2viz.todo.fwk
 
 import kotlinx.html.TagConsumer
 import kotlinx.html.dom.JSDOMBuilder
@@ -23,9 +23,7 @@ val render : TagConsumer<HTMLElement>
 
 
 val HTMLElement.uniqueChild: Node
-    get() {
-        return childNodes[0]!!
-    }
+    get() = childNodes[0]!!
 
 fun Element.removeChildren() {
     while (firstElementChild != null) {

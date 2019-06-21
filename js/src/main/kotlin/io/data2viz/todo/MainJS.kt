@@ -1,10 +1,10 @@
 package io.data2viz.todo
 
 import io.data2viz.play.todo.*
+import io.data2viz.todo.fwk.*
 import kotlinx.html.js.section
 import org.w3c.dom.*
 import kotlin.browser.document
-
 
 fun main() {
     println("starting client app")
@@ -34,35 +34,50 @@ object TodoApp: StateListener<TodoAppState> {
         bindEvents(state)
     }
 
-    fun bindEvents(state: TodoAppState) {
+    private fun bindEvents(state: TodoAppState) {
         val newTodo = container.querySelector("input.new-todo") as HTMLInputElement
-        newTodo.onkeypress = { evt ->
-            if (evt.keyCode == ENTER_KEY_CODE && newTodo.value.trim().isNotEmpty()) {
-                TodoAppStore.dispatch(ActionAddTodo(newTodo.value.trim()))
+
+        fun addNewTodoOnEnter() {
+            newTodo.onkeypress = { evt ->
+                if (evt.keyCode == ENTER_KEY_CODE && newTodo.value.trim().isNotEmpty()) {
+                    TodoAppStore.dispatch(ActionAddTodo(newTodo.value.trim()))
+                }
             }
         }
 
-        val clearCompleted = container.querySelector("button.clear-completed") as HTMLButtonElement
-        clearCompleted.onclick = { TodoAppStore.dispatch(ActionClearCompleted)}
-
-        addEvents("input.completeTodo", state.filteredTodos) { todo ->
-            onclick = { TodoAppStore.dispatch(ActionCompleteTodo(todo)) }
-        }
-        addEvents("button.deleteTodo", state.filteredTodos) { todo ->
-            onclick = { TodoAppStore.dispatch(ActionRemoveTodo(todo)) }
+        fun clearCompletedClicked() {
+            val clearCompleted = container.querySelector("button.clear-completed") as HTMLButtonElement
+            clearCompleted.onclick = { TodoAppStore.dispatch(ActionClearCompleted) }
         }
 
-        val visibilityLinks = container.querySelectorAll("a.visibility-filter").asList()
-        visibilityLinks.forEach {
-            console.log(it)
-            val link = it as HTMLElement
-            link.onclick = {
-                val filter = VisibilityFilter.valueOf(link.id)
-                println("$filter clicked")
-                TodoAppStore.dispatch(ActionSetVisibilityFilter(filter))
+        fun completeTodoClicked() {
+            addEvents("input.completeTodo", state.filteredTodos) { todo ->
+                onclick = { TodoAppStore.dispatch(ActionCompleteTodo(todo)) }
             }
         }
 
+        fun deleteTodoClicked() {
+            addEvents("button.deleteTodo", state.filteredTodos) { todo ->
+                onclick = { TodoAppStore.dispatch(ActionRemoveTodo(todo)) }
+            }
+        }
+
+        fun selectVisibility() {
+            val visibilityLinks = container.querySelectorAll("a.visibility-filter").asList()
+            visibilityLinks.forEach {
+                val link = it as HTMLElement
+                link.onclick = {
+                    val filter = VisibilityFilter.valueOf(link.id)
+                    TodoAppStore.dispatch(ActionSetVisibilityFilter(filter))
+                }
+            }
+        }
+
+        addNewTodoOnEnter()
+        clearCompletedClicked()
+        completeTodoClicked()
+        deleteTodoClicked()
+        selectVisibility()
         newTodo.focus()
     }
 

@@ -1,4 +1,4 @@
-package io.data2viz.todo
+package io.data2viz.todo.fwk
 
 
 interface StateListener<in S> {
