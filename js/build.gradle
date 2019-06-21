@@ -16,7 +16,6 @@ compileKotlin2Js {
         sourceMapEmbedSources = "always"
         moduleKind = 'umd'
         main = "call"
-        freeCompilerArgs += ["-XXLanguage:+InlineClasses"]
     }
 }
 
