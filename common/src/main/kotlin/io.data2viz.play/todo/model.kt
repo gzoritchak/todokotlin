@@ -7,14 +7,16 @@ import kotlinx.serialization.Serializable
 data class TodoAppState(
     val todos: List<ToDo> = listOf(),
     val visibilityFilter: VisibilityFilter = VisibilityFilter.ALL,
-    val newTodo: String = ""
+    val newTodo: String = "",
+    val messages: List<String> = listOf()
 )
 
 
 @Serializable
 data class ToDo(
     val text: String,
-    val completed: Boolean = false
+    val completed: Boolean = false,
+    val UUID: String? = null
 )
 
 enum class VisibilityFilter {
