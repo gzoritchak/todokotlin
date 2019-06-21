@@ -1,4 +1,4 @@
-rootProject.name = 'play.data2viz.io'
+rootProject.name = 'todokotlin'
 
 include(":jvm")
 include(":common")

@@ -1,13 +1,25 @@
 
 ![app screen](docs/app-screen.png)
 
-
 This project is a small prototype of a Kotlin multiplatform web application. 
+The goal of this architecture is to have server generated pages, parsable 
+by search engines, but also with client interactions. 
 
-It shares view rendering on the server and the client with 
+Rendering code is shared and used by server and client using 
 [kotlinx.html](https://github.com/Kotlin/kotlinx.html) common code.
 
-It includes the state of the app in the page using 
+Client and server share the state of the app using 
 [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization).
 
-On the client side, it uses a basic redux implementation.
+Client implementation uses redux.
+
+## build and launch
+From the root directory, just launch:
+
+```bash
+ ./gradlew run
+```
+
+## Todo
+ - use new MPP plugin,
+ - client server calls with error management,

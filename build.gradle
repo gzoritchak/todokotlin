@@ -25,3 +25,21 @@ allprojects {
 // Report Kotlin compiler version when building project
 println("Using Kotlin compiler version: $org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION")
 
+
+
+
+def mySubProjects = [':js', ':jvm']
+configurations {
+    javaExec
+}
+dependencies {
+    mySubProjects.each {
+        javaExec project(path: it, configuration: 'runtime')
+    }
+}
+
+task run(type: JavaExec, dependsOn: [":js:build",":jvm:build",]) {
+    main = "io.data2viz.todo.MainJVMKt"
+    classpath = configurations.javaExec
+    args = []
+}
