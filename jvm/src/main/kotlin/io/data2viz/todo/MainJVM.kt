@@ -17,6 +17,7 @@ import io.ktor.routing.get
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import io.ktor.sessions.*
 import io.ktor.util.KtorExperimentalAPI
 import kotlinx.html.*
 import kotlinx.serialization.json.Json
@@ -38,13 +39,23 @@ fun Application.mainModule() {
     install(CallLogging) {
         level = Level.INFO
     }
+    install(Sessions) {
+        cookie<String>("TodoAppState", SessionStorageMemory())
+    }
     install(StatusPages)
     routing {
 
         get("/") {
+            val todoAppState = call.sessions.getOrSet { TodoAppState(
+                listOf(
+                    ToDo("Share views", true),
+                    ToDo("Share state between server and client", true),
+                    ToDo("Action with remote call")
+                )
+            ).toJson() }
             call.respondHtml {
                 pageHead()
-                pageBody()
+                pageBody(todoAppState.jsonToTodoAppState())
             }
         }
         static("/") {
@@ -54,25 +65,15 @@ fun Application.mainModule() {
 
 }
 
-val serverState = TodoAppState(
-    listOf(
-        ToDo("Share views", true),
-        ToDo("Share state between server and client", true),
-        ToDo("Set completed", true),
-        ToDo("Add todo", true),
-        ToDo("Action with remote call")
-    )
-)
-
-private fun HTML.pageBody() {
+private fun HTML.pageBody(todoAppState: TodoAppState) {
     body {
         section("todoapp") {
-            todoHeader(serverState)
-            todoMain(serverState)
-            todoFooter(serverState)
+            todoHeader(todoAppState)
+            todoMain(todoAppState)
+            todoFooter(todoAppState)
         }
         val json = Json(JsonConfiguration.Stable)
-        val jsonData = json.stringify(TodoAppState.serializer(), serverState)
+        val jsonData = json.stringify(TodoAppState.serializer(), todoAppState)
 
         script {
             unsafe {
@@ -127,3 +128,10 @@ fun FlowContent.includeJs() {
         }
     }
 }
+
+fun TodoAppState.toJson(): String {
+    val json = Json(JsonConfiguration.Stable)
+    return  json.stringify(TodoAppState.serializer(), this)
+}
+
+fun String.jsonToTodoAppState(): TodoAppState = Json.parse(TodoAppState.serializer(), this)
