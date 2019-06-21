@@ -3,6 +3,8 @@ package io.data2viz.todo
 import io.data2viz.play.todo.TodoAppState
 import io.data2viz.play.todo.ToDo
 import io.data2viz.play.todo.VisibilityFilter
+import io.data2viz.todo.fwk.Middleware
+import io.data2viz.todo.fwk.Next
 import io.data2viz.todo.fwk.Store
 import kotlinx.serialization.json.Json
 
@@ -20,7 +22,11 @@ object ActionClearCompleted : Action()
  */
 external val viewSharedState: String
 
-object TodoAppStore : Store<TodoAppState, Action>(Json.parse(TodoAppState.serializer(), viewSharedState)) {
+object TodoAppStore :
+    Store<TodoAppState, Action>(
+        Json.parse(TodoAppState.serializer(), viewSharedState),
+        listOf(LogMidleware())
+    ) {
 
     override fun reducer(state: TodoAppState, action: Action): TodoAppState {
         return  when (action) {
@@ -38,3 +44,17 @@ object TodoAppStore : Store<TodoAppState, Action>(Json.parse(TodoAppState.serial
     }
 
 }
+
+class LogMidleware : Middleware<TodoAppState, Action> {
+
+    override fun applyMiddleware(
+        store: Store<TodoAppState, Action>,
+        action: Action,
+        next: Next<TodoAppState, Action>
+    ): Action {
+        console.log(action)
+        return next.next(store, action)
+    }
+
+}
+
