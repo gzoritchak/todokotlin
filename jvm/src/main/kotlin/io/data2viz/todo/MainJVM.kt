@@ -1,10 +1,6 @@
 package io.data2viz.todo
 
-import io.data2viz.play.todo.ToDo
-import io.data2viz.play.todo.TodoAppState
-import io.data2viz.play.todo.todoFooter
-import io.data2viz.play.todo.todoHeader
-import io.data2viz.play.todo.todoMain
+import io.data2viz.play.todo.*
 import io.ktor.application.Application
 import io.ktor.application.call
 import io.ktor.application.install
@@ -38,6 +34,8 @@ fun main() {
     }.start(wait = true)
 }
 
+var deleteCount = 0
+
 @KtorExperimentalAPI
 @Suppress("unused") //used by application.conf
 fun Application.mainModule() {
@@ -67,12 +65,18 @@ fun Application.mainModule() {
 
         route("todo") {
             delete("/{uuid}"){
-                val todoAppState = call.sessions.get<UserSession>()!!.toTodoAppState()
-                val todo = todoAppState.todos.first { it.UUID == call.parameters["uuid"] }
-                val newTodos = todoAppState.todos - todo
-                todoAppState.copy(todos = newTodos)
-                call.sessions.set(todoAppState.toSession())
-                call.respond(HttpStatusCode.OK, "deleted")
+                deleteCount++
+                if (deleteCount % 2 == 0) {
+                    call.respond(HttpStatusCode.InternalServerError, "Error")
+                } else {
+                    val todoAppState = call.sessions.get<UserSession>()!!.toTodoAppState()
+                    val todo = todoAppState.todos.first { it.UUID == call.parameters["uuid"] }
+                    val newTodos = todoAppState.todos - todo
+                    val newState = todoAppState.copy(todos = newTodos)
+                    call.sessions.set(newState.toSession())
+                    call.respond(HttpStatusCode.OK, "deleted")
+                }
+
             }
         }
         static("/") {
@@ -90,6 +94,9 @@ private fun HTML.pageBody(todoAppState: TodoAppState) {
             todoHeader(todoAppState)
             todoMain(todoAppState)
             todoFooter(todoAppState)
+        }
+        div("messages"){
+            messages(todoAppState.messages)
         }
         val json = Json(JsonConfiguration.Stable)
         val jsonData = json.stringify(TodoAppState.serializer(), todoAppState)

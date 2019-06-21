@@ -89,3 +89,14 @@ fun SECTION.todoFooter(state: TodoAppState) {
         }
     }
 }
+
+
+fun DIV.messages(messages:List<String>){
+    div { //we need a unique child
+        messages.forEach {
+            div("message") {
+                + it
+            }
+        }
+    }
+}

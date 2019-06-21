@@ -2,6 +2,7 @@ package io.data2viz.todo
 
 import io.data2viz.play.todo.*
 import io.data2viz.todo.fwk.*
+import kotlinx.html.js.div
 import kotlinx.html.js.section
 import org.w3c.dom.*
 import kotlin.browser.document
@@ -16,14 +17,15 @@ fun main() {
 const val ENTER_KEY_CODE = 13
 
 
-
-
 object MessageApp: PartialSubscriber.SubStateChangeListener<TodoAppState, List<String>> {
+
+    private val container: Element = document.querySelector(".messages")!!
 
     override fun getSubState(state: TodoAppState): List<String>  = state.messages
 
     override fun onSubStateChanged(messages: List<String>) {
-        console.log(messages)
+        container.removeChildren()
+        container.appendChild(render.div { messages(messages)}.uniqueChild)
     }
 
     fun init() {

@@ -1,7 +1,7 @@
 package io.data2viz.todo
 
-import io.data2viz.play.todo.TodoAppState
 import io.data2viz.play.todo.ToDo
+import io.data2viz.play.todo.TodoAppState
 import io.data2viz.play.todo.VisibilityFilter
 import io.data2viz.todo.fwk.Middleware
 import io.data2viz.todo.fwk.Next
@@ -15,6 +15,8 @@ data class ActionAddTodo(val text: String) : Action()
 data class ActionCompleteTodo(val toDo: ToDo) : Action()
 data class ActionRemoveTodo(val toDo: ToDo) : Action()
 data class ActionSetVisibilityFilter(val filter: VisibilityFilter) : Action()
+data class ActionAddError(val message: String): Action()
+data class ActionRemoveError(val index: Int): Action()
 object ActionClearCompleted : Action()
 
 /**
@@ -25,7 +27,7 @@ external val viewSharedState: String
 object TodoAppStore :
     Store<TodoAppState, Action>(
         Json.parse(TodoAppState.serializer(), viewSharedState),
-        listOf(LogMidleware())
+        listOf(LogMiddleware(), APIMiddleware())
     ) {
 
     override fun reducer(state: TodoAppState, action: Action): TodoAppState {
@@ -40,12 +42,21 @@ object TodoAppStore :
             }
             is ActionClearCompleted -> state.copy(todos = state.todos.filter { !it.completed })
             is ActionSetVisibilityFilter -> state.copy(visibilityFilter = action.filter)
+            is ActionAddError -> state.copy(messages = state.messages + action.message)
+            is ActionRemoveError -> state.copy(messages =
+                state
+                    .messages
+                    .toMutableList().apply { removeAt(action.index) }
+                    .toList()
+            )
         }
     }
 
 }
 
-class LogMidleware : Middleware<TodoAppState, Action> {
+
+class LogMiddleware : Middleware<TodoAppState, Action> {
+
 
     override fun applyMiddleware(
         store: Store<TodoAppState, Action>,

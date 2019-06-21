@@ -11,7 +11,7 @@ Rendering code is shared and used by server and client using
 Client and server share the state of the app using 
 [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization).
 
-Client implementation uses redux.
+Client code uses its own implementation of redux.
 
 ## build and launch
 From the root directory, just launch:
@@ -22,4 +22,3 @@ From the root directory, just launch:
 
 ## Todo
  - use new MPP plugin,
- - client server calls with error management,
