@@ -73,6 +73,14 @@ fun Application.mainModule() {
                 call.sessions.set(newState.toSession())
                 call.respond(HttpStatusCode.OK, newState.toJson())
             }
+            patch("/clearCompleted") {
+                val uuids = call.receive<String>().split('+').toList()
+                val todoAppState = userTodos()
+                val newTodos = todoAppState.todos.filterNot { uuids.contains(it.UUID) }
+                val newState = todoAppState.copy(todos = newTodos)
+                call.sessions.set(newState.toSession())
+                call.respond(HttpStatusCode.OK, newState.toJson())
+            }
             get("/{uuid}/complete"){
                 val todoAppState = userTodos()
                 val todo = todoAppState.todos.first { it.UUID == call.parameters["uuid"] }

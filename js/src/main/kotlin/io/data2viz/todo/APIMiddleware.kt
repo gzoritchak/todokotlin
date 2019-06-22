@@ -30,7 +30,7 @@ class APIMiddleware : Middleware<TodoAppState, Action> {
         next: Next<TodoAppState, Action>
     ): Action {
 
-        return when (action){
+        return when (action) {
             is ActionRemoveTodo -> {
                 GlobalScope.launch {
                     client.delete<HttpResponse>("todo/${action.toDo.UUID}")
@@ -38,7 +38,6 @@ class APIMiddleware : Middleware<TodoAppState, Action> {
                 }
                 next.next(store, action)
             }
-            //TODO implement server synchronization for following actions
             is ActionAddTodo -> {
                 GlobalScope.launch {
                     val response = client.post<HttpResponse>("todo/") {
@@ -58,7 +57,22 @@ class APIMiddleware : Middleware<TodoAppState, Action> {
                 }
                 next.next(store, action)
             }
-            is ActionClearCompleted -> next.next(store, action)
+            is ActionClearCompleted -> {
+                val completedTodos = store.state.todos
+                    .filter { it.completed }
+                if (completedTodos.isNotEmpty())
+                    GlobalScope.launch {
+                        val response = client.patch<HttpResponse>("todo/clearCompleted") {
+                            body = completedTodos.mapNotNull { it.UUID }
+                                    .joinToString("+")
+                        }.displayEventualRemoteCallError(store)
+                        val json = response.receive<String>()
+                        val todos = Json.parse(TodoAppState.serializer(), json).todos
+                        store.dispatch(ActionUpdateTodos(todos))
+                    }
+                next.next(store, action)
+
+            }
             else -> next.next(store, action)
         }
     }
