@@ -12,6 +12,7 @@ import kotlinx.serialization.json.Json
 sealed class Action
 
 data class ActionAddTodo(val text: String) : Action()
+data class ActionUpdateTodos(val todos: List<ToDo>) : Action()
 data class ActionCompleteTodo(val toDo: ToDo) : Action()
 data class ActionRemoveTodo(val toDo: ToDo) : Action()
 data class ActionSetVisibilityFilter(val filter: VisibilityFilter) : Action()
@@ -34,6 +35,7 @@ object TodoAppStore :
         return  when (action) {
             is ActionAddTodo -> state.copy(todos = state.todos + ToDo(action.text))
             is ActionRemoveTodo -> state.copy(todos = state.todos - action.toDo)
+            is ActionUpdateTodos -> state.copy(todos = action.todos)
             is ActionCompleteTodo -> {
                 val newTodoState = action.toDo.copy(completed = !action.toDo.completed)
                 val newTodos = state.todos.toMutableList()
@@ -54,9 +56,7 @@ object TodoAppStore :
 
 }
 
-
 class LogMiddleware : Middleware<TodoAppState, Action> {
-
 
     override fun applyMiddleware(
         store: Store<TodoAppState, Action>,

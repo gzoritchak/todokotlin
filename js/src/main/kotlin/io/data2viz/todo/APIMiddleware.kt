@@ -5,19 +5,20 @@ import io.data2viz.todo.fwk.Middleware
 import io.data2viz.todo.fwk.Next
 import io.data2viz.todo.fwk.Store
 import io.ktor.client.HttpClient
+import io.ktor.client.call.receive
 import io.ktor.client.features.defaultRequest
-import io.ktor.client.request.delete
-import io.ktor.client.request.host
-import io.ktor.client.request.port
+import io.ktor.client.request.*
 import io.ktor.client.response.HttpResponse
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 
 class APIMiddleware : Middleware<TodoAppState, Action> {
 
     private val client = HttpClient {
         defaultRequest {
+            //todo load from context
             host = "127.0.0.1"
             port = 8080
         }
@@ -32,20 +33,47 @@ class APIMiddleware : Middleware<TodoAppState, Action> {
         return when (action){
             is ActionRemoveTodo -> {
                 GlobalScope.launch {
-                    val response: HttpResponse = client.delete("todo/${action.toDo.UUID}")
-                    if (response.status != HttpStatusCode.OK) {
-                        store.dispatch(
-                            ActionAddError(
-                                "Failure during remote execution. You should probably reload the page"))
-                    }
+                    client.delete<HttpResponse>("todo/${action.toDo.UUID}")
+                        .displayEventualRemoteCallError(store)
                 }
                 next.next(store, action)
             }
-            is ActionAddTodo -> next.next(store, action)
-            is ActionCompleteTodo -> next.next(store, action)
+            //TODO implement server synchronization for following actions
+            is ActionAddTodo -> {
+                GlobalScope.launch {
+                    val response = client.post<HttpResponse>("todo/") {
+                        body = action.text
+                    }.displayEventualRemoteCallError(store)
+                    val json = response.receive<String>()
+                    val todos = Json.parse(TodoAppState.serializer(), json).todos
+                    store.dispatch(ActionUpdateTodos(todos))
+                }
+
+                next.next(store, action)
+            }
+            is ActionCompleteTodo -> {
+                GlobalScope.launch {
+                    client.get<HttpResponse>("todo/${action.toDo.UUID}/complete")
+                        .displayEventualRemoteCallError(store)
+                }
+                next.next(store, action)
+            }
             is ActionClearCompleted -> next.next(store, action)
             else -> next.next(store, action)
         }
+    }
+
+    private fun HttpResponse.displayEventualRemoteCallError(
+        store: Store<TodoAppState, Action>
+    ): HttpResponse {
+        if (status != HttpStatusCode.OK) {
+            store.dispatch(
+                ActionAddError(
+                    "Failure during remote execution. You should probably reload the page"
+                )
+            )
+        }
+        return this
     }
 
 }

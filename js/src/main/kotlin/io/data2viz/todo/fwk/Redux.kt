@@ -7,7 +7,7 @@ interface StateListener<in S> {
 
 abstract class Store<State, Action>(
 	initialState: State,
-	val middlewares:List<Middleware<State, Action>> = listOf()) {
+	private val middlewares:List<Middleware<State, Action>> = listOf()) {
 
 	abstract fun reducer(state: State, action: Action): State
 
@@ -30,16 +30,13 @@ abstract class Store<State, Action>(
 		return { listeners.remove(listener) }
 	}
 
-	private fun applyMiddleWare(action: Action): Action {
-		val chain = createNext(0)
-		return chain.next(this, action)
-	}
+	private fun applyMiddleWare(action: Action): Action = createNext(0).next(this, action)
 
-	private fun createNext(index: Int):Next<State, Action> {
+	private fun createNext(index: Int):Next<State, Action> =
 		if (index == middlewares.size)
-			return EndOfChain()
-		return NextMiddleware(middlewares[index], createNext(index + 1))
-	}
+			EndOfChain()
+		else
+			NextMiddleware(middlewares[index], createNext(index + 1))
 }
 
 
@@ -55,16 +52,12 @@ class NextMiddleware<State, Action>(
 	val middleware: Middleware<State, Action>,
 	val next: Next<State, Action>): Next<State, Action> {
 
-	override fun next(store: Store<State, Action>, action: Action): Action {
-		return middleware.applyMiddleware(store, action, next)
-	}
+	override fun next(store: Store<State, Action>, action: Action): Action =
+		middleware.applyMiddleware(store, action, next)
 }
 
 class EndOfChain<State,Action>: Next<State, Action> {
-
-	override fun next(store: Store<State, Action>, action: Action): Action {
-		return action
-	}
+	override fun next(store: Store<State, Action>, action: Action): Action = action
 }
 
 

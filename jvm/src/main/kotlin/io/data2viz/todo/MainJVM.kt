@@ -2,6 +2,7 @@ package io.data2viz.todo
 
 import io.data2viz.play.todo.*
 import io.ktor.application.Application
+import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.features.CallLogging
@@ -10,15 +11,14 @@ import io.ktor.html.respondHtml
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.files
 import io.ktor.http.content.static
+import io.ktor.request.receive
 import io.ktor.response.respond
-import io.ktor.routing.delete
-import io.ktor.routing.get
-import io.ktor.routing.route
-import io.ktor.routing.routing
+import io.ktor.routing.*
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.sessions.*
 import io.ktor.util.KtorExperimentalAPI
+import io.ktor.util.pipeline.PipelineContext
 import kotlinx.html.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
@@ -64,19 +64,40 @@ fun Application.mainModule() {
         }
 
         route("todo") {
+            post {
+                val text = call.receive<String>()
+                val newTodo = ToDo(text, false, uuid())
+                val todoAppState = userTodos()
+                val newTodos  = todoAppState.todos + newTodo
+                val newState = todoAppState.copy(todos = newTodos)
+                call.sessions.set(newState.toSession())
+                call.respond(HttpStatusCode.OK, newState.toJson())
+            }
+            get("/{uuid}/complete"){
+                val todoAppState = userTodos()
+                val todo = todoAppState.todos.first { it.UUID == call.parameters["uuid"] }
+                val newTodo = todo.copy(completed = !todo.completed)
+                val todoIndex = todoAppState.todos.indexOf(todo)
+                val newtodos = todoAppState.todos
+                    .toMutableList()
+                    .apply { set(todoIndex, newTodo) }
+                    .toList()
+                val newState = todoAppState.copy(todos = newtodos)
+                call.sessions.set(newState.toSession())
+                call.respond(HttpStatusCode.OK, "completed")
+            }
             delete("/{uuid}"){
                 deleteCount++
-                if (deleteCount % 2 == 0) {
+                if (deleteCount % 2 == 0) { //simulates an error every two calls.
                     call.respond(HttpStatusCode.InternalServerError, "Error")
                 } else {
-                    val todoAppState = call.sessions.get<UserSession>()!!.toTodoAppState()
+                    val todoAppState = userTodos()
                     val todo = todoAppState.todos.first { it.UUID == call.parameters["uuid"] }
                     val newTodos = todoAppState.todos - todo
                     val newState = todoAppState.copy(todos = newTodos)
                     call.sessions.set(newState.toSession())
                     call.respond(HttpStatusCode.OK, "deleted")
                 }
-
             }
         }
         static("/") {
@@ -85,6 +106,9 @@ fun Application.mainModule() {
     }
 
 }
+
+private fun PipelineContext<Unit, ApplicationCall>.userTodos(): TodoAppState =
+    call.sessions.get<UserSession>()!!.toTodoAppState()
 
 private fun uuid() = UUID.randomUUID().toString()
 
@@ -98,8 +122,7 @@ private fun HTML.pageBody(todoAppState: TodoAppState) {
         div("messages"){
             messages(todoAppState.messages)
         }
-        val json = Json(JsonConfiguration.Stable)
-        val jsonData = json.stringify(TodoAppState.serializer(), todoAppState)
+        val jsonData = todoAppState.toJson()
 
         script {
             unsafe {
@@ -113,6 +136,10 @@ private fun HTML.pageBody(todoAppState: TodoAppState) {
         includeJs()
     }
 }
+
+private fun TodoAppState.toJson(): String =
+    Json(JsonConfiguration.Stable)
+        .stringify(TodoAppState.serializer(), this)
 
 private fun HTML.pageHead() {
     head {
@@ -160,8 +187,5 @@ data class UserSession(val jsonAppState: String) {
     fun toTodoAppState(): TodoAppState = Json.parse(TodoAppState.serializer(), jsonAppState)
 }
 
-fun TodoAppState.toSession(): UserSession {
-    val json = Json(JsonConfiguration.Stable)
-    return  UserSession(json.stringify(TodoAppState.serializer(), this))
-}
+fun TodoAppState.toSession(): UserSession = UserSession(toJson())
 
