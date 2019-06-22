@@ -3,7 +3,7 @@
 This project is a prototype of a Kotlin multiple page application that 
 shares code between server and client for rendering and state.
 
-<img src="docs/app-screen.png" alt="Todo application" width="300"/>
+<img src="docs/app-screen.png" alt="Todo application" width="500"/>
 
 
 ## Sharing view rendering
@@ -13,7 +13,7 @@ side, this code is integrated into the whole page rendering. On the client,
  this code generates a new DOM subtree to replace a portion of the page, 
  depending on user interaction.
 
-##Sharing state
+## Sharing state
 The application uses Kotlinx.serialization to share state between server 
 and client. The page includes a JSON variable that represents the server 
 state of the user's ToDos. The client-side deserializes it during page 
