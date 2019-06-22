@@ -78,7 +78,7 @@ class PartialSubscriber<in State, SubState>(private val subStateChangeListener: 
 
 	override fun applyState(state: State) {
 		val subState = subStateChangeListener.getSubState(state)
-		if (previousValue == null || subState != previousValue) {
+		if (previousValue == null || subState !== previousValue) {
 			subStateChangeListener.onSubStateChanged(subState)
 			previousValue = subState
 		}
