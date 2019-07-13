@@ -6,7 +6,9 @@ import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.features.CallLogging
+import io.ktor.features.Compression
 import io.ktor.features.StatusPages
+import io.ktor.features.gzip
 import io.ktor.html.respondHtml
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.files
@@ -39,6 +41,9 @@ var deleteCount = 0
 @KtorExperimentalAPI
 @Suppress("unused") //used by application.conf
 fun Application.mainModule() {
+    install(Compression) {
+        gzip()
+    }
     install(CallLogging) {
         level = Level.INFO
     }
@@ -182,6 +187,8 @@ private fun HTML.pageHead() {
 }
 
 fun FlowContent.includeJs() {
+//    script(src = "/main.bundle.js") {}
+
     val parentPackage = "js.io.data2viz.todo"
     script {
         unsafe {
