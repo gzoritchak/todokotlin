@@ -2,6 +2,7 @@ package io.data2viz.todo
 
 import io.data2viz.play.todo.*
 import io.data2viz.todo.fwk.*
+import kotlinx.html.div
 import kotlinx.html.js.div
 import kotlinx.html.js.section
 import org.w3c.dom.*
@@ -24,8 +25,13 @@ object MessageApp: PartialSubscriber.SubStateChangeListener<TodoAppState, List<S
     override fun getSubState(state: TodoAppState): List<String>  = state.messages
 
     override fun onSubStateChanged(messages: List<String>) {
-        container.removeChildren()
-        container.appendChild(render.div { messages(messages)}.uniqueChild)
+        updateElement(
+            container.parentElement!!,
+            render.div {
+                messages(messages)
+            },
+            container
+        )
     }
 
     fun init() {
@@ -48,10 +54,14 @@ object TodoApp: StateListener<TodoAppState> {
     }
 
     private fun renderFromState(state: TodoAppState) {
-        container.removeChildren()
-        container.appendChild(render.section { todoHeader(state)}.uniqueChild)
-        container.appendChild(render.section { todoMain(state)}.uniqueChild)
-        container.appendChild(render.section { todoFooter(state)}.uniqueChild)
+        updateElement(container.parentElement!!,
+            render.section {
+                todoHeader(state)
+                todoMain(state)
+                todoFooter(state)
+            },
+            container)
+
         bindEvents(state)
     }
 
