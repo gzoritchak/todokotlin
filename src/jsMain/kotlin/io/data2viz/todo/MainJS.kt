@@ -25,13 +25,8 @@ object MessageApp: PartialSubscriber.SubStateChangeListener<TodoAppState, List<S
     override fun getSubState(state: TodoAppState): List<String>  = state.messages
 
     override fun onSubStateChanged(messages: List<String>) {
-        updateElement(
-            container.parentElement!!,
-            render.div {
-                messages(messages)
-            },
-            container
-        )
+		val newContainer = domBuilder.div { messages(messages) }
+		container.updateWith(newContainer)
     }
 
     fun init() {
@@ -54,13 +49,12 @@ object TodoApp: StateListener<TodoAppState> {
     }
 
     private fun renderFromState(state: TodoAppState) {
-        updateElement(container.parentElement!!,
-            render.section {
-                todoHeader(state)
-                todoMain(state)
-                todoFooter(state)
-            },
-            container)
+		val newContainer = domBuilder.section {
+			todoHeader(state)
+			todoMain(state)
+			todoFooter(state)
+		}
+		container.updateWith(newContainer)
 
         bindEvents(state)
     }

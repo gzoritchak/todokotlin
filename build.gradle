@@ -1,17 +1,22 @@
 
 buildscript {
 
-    repositories {
-        jcenter()
-        mavenCentral()
-    }
-    dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "org.jetbrains.kotlin:kotlin-serialization:$kotlin_version"
-    }
+	repositories {
+		jcenter()
+		mavenCentral()
+		maven { url "https://plugins.gradle.org/m2/" }
+
+	}
+	dependencies {
+		classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+		classpath "org.jetbrains.kotlin:kotlin-serialization:$kotlin_version"
+		classpath "com.moowork.gradle:gradle-node-plugin:$gradle_node_version"
+	}
 }
 
-
+plugins {
+	id 'org.jetbrains.kotlin.multiplatform' version '1.3.50'
+}
 
 group 'io.data2viz'
 version '1.0-SNAPSHOT'
@@ -26,20 +31,164 @@ allprojects {
 println("Using Kotlin compiler version: $org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION")
 
 
+apply plugin: 'kotlinx-serialization'
+apply plugin: 'kotlin-dce-js'
+apply plugin: 'com.moowork.node'
+apply plugin: 'application'
 
 
-def mySubProjects = [':js', ':jvm']
-configurations {
-    javaExec
-}
-dependencies {
-    mySubProjects.each {
-        javaExec project(path: it, configuration: 'runtime')
-    }
+kotlin {
+
+	jvm {
+		withJava()
+		compilations.main {
+			kotlinOptions {
+				jvmTarget = "1.8"
+			}
+		}
+		compilations.test {
+			kotlinOptions {
+				jvmTarget = "1.8"
+			}
+		}
+	}
+	js {
+		compilations.main{
+			kotlinOptions {
+				metaInfo = true
+				sourceMap = true
+				sourceMapEmbedSources = "inlining"
+				moduleKind = 'umd'
+				main = "call"
+				freeCompilerArgs += ["-XXLanguage:+InlineClasses"]
+			}
+		}
+	}
+
+	sourceSets {
+
+		jvmMain {
+			dependencies {
+				implementation kotlin('stdlib-jdk8')
+				implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+				implementation "io.ktor:ktor-client-apache:$ktor_version"
+				implementation "io.ktor:ktor-jackson:$ktor_version"
+				implementation "io.ktor:ktor-html-builder:$ktor_version"
+				implementation "io.ktor:ktor-locations:$ktor_version"
+				implementation "io.ktor:ktor-server-netty:$ktor_version"
+				implementation("io.ktor:ktor-server-sessions:$ktor_version")
+				implementation "org.jetbrains.kotlinx:kotlinx-html-jvm:$kotlinx_html_version"
+				implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime:$kotlin_serializable_version"
+				implementation "ch.qos.logback:logback-classic:$logback_version"
+			}
+		}
+
+		jvmTest {
+			dependencies {
+				implementation "io.mockk:mockk:1.9.3"
+				implementation 'com.google.truth:truth:0.35'
+				implementation 'org.hamcrest:java-hamcrest:2.0.0.0'
+				implementation "io.ktor:ktor-server-test-host:$ktor_version"
+			}
+		}
+
+		jsMain {
+			dependencies {
+				implementation kotlin('stdlib-js')
+				implementation "org.jetbrains.kotlin:kotlin-stdlib-js:$kotlin_version"
+				implementation "org.jetbrains.kotlinx:kotlinx-html-js:$kotlinx_html_version"
+				implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime-js:$kotlin_serializable_version"
+				implementation "io.ktor:ktor-client-js:$ktor_version"
+			}
+		}
+
+		jsTest {
+			dependencies {
+				implementation "org.jetbrains.kotlin:kotlin-test-js:$kotlin_version"
+			}
+
+		}
+
+
+		commonMain {
+			dependencies {
+				implementation kotlin('stdlib-common')
+				implementation "org.jetbrains.kotlinx:kotlinx-html-common:$kotlinx_html_version"
+				implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$kotlin_serializable_version"
+
+			}
+		}
+		commonTest {
+			dependencies {
+				implementation kotlin('test-common')
+				implementation kotlin('test-annotations-common')
+			}
+		}
+	}
+
 }
 
-task run(type: JavaExec, dependsOn: [":js:build",":jvm:build",]) {
-    main = "io.data2viz.todo.MainJVMKt"
-    classpath = configurations.javaExec
-    args = []
+runDceJsKotlin {
+	dceOptions{
+		devMode = false
+		outputDirectory = "data/public"
+	}
 }
+runDceJsTestKotlin {
+	dceOptions{
+		devMode = true
+		outputDirectory = "node_modules"
+	}
+}
+
+node {
+	version = "$node_version"
+	npmVersion = "$npm_version"
+	download = true
+}
+
+task installDependencies(type: YarnTask) {
+	args = ['install']
+}
+
+task prepareMocha(dependsOn: [jsTestClasses, runDceJsTestKotlin, installDependencies])
+
+task runJsTests(type: YarnTask, dependsOn: prepareMocha) {
+	args = ['test']
+}
+
+
+mainClassName="io.ktor.server.netty.EngineMain"
+
+if (distJar.toBoolean()) {
+
+	apply plugin: "com.github.johnrengelman.shadow"
+
+	shadowJar {
+		baseName = 'play.data2viz.io'
+		classifier = null
+		version = null
+	}
+}
+
+build.dependsOn(runDceJsKotlin)
+run.dependsOn(build)
+
+
+if (false) {
+
+	apply plugin: 'com.moowork.node'
+
+	task yarnInstall(type: YarnTask) {
+		args = ['install']
+	}
+
+	task bundle(type: YarnTask, dependsOn: [runDceKotlinJs, yarnInstall]) {
+		args = ["run", "bundle"]
+	}
+
+	runDceKotlinJs.keep "js.io.data2viz.todo.main"
+//} else {
+//	runDceKotlinJs.dceOptions.devMode = true
+}
+

@@ -192,7 +192,7 @@ fun FlowContent.includeJs() {
     val parentPackage = "js.io.data2viz.todo"
     script {
         unsafe {
-            +"require(['/js.js'], function(js) { console.log($parentPackage); });\n"
+            +"require(['/todokotlin.js'], function(js) { console.log($parentPackage); });\n"
         }
     }
 }

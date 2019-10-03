@@ -1,0 +1,13 @@
+{
+  "name": "todojs-js",
+  "dependencies": {
+    "browserify-cipher": "^1.0.1"
+  },
+  "devDependencies": {
+    "html-webpack-plugin": "2.30.1",
+    "webpack": "3.10.0"
+  },
+  "scripts": {
+    "bundle": "webpack"
+  }
+}

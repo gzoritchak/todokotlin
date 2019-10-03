@@ -6,25 +6,30 @@ import io.data2viz.todo.fwk.Next
 import io.data2viz.todo.fwk.Store
 import io.ktor.client.HttpClient
 import io.ktor.client.call.receive
+import io.ktor.client.features.cookies.HttpCookies
 import io.ktor.client.features.defaultRequest
 import io.ktor.client.request.*
 import io.ktor.client.response.HttpResponse
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.URLProtocol
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import kotlin.browser.document
 
 class APIMiddleware : Middleware<TodoAppState, Action> {
 
-    private val client = HttpClient {
-        defaultRequest {
-            //todo load from context
-            host = "127.0.0.1"
-            port = 8080
-        }
-    }
+	private val client = HttpClient {
+		install(HttpCookies)
+		defaultRequest {
+			//todo load from context
+			host = "127.0.0.1"
+			port = 8080
+		}
+	}
 
-    override fun applyMiddleware(
+
+	override fun applyMiddleware(
         store: Store<TodoAppState, Action>,
         action: Action,
         next: Next<TodoAppState, Action>
