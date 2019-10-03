@@ -2,7 +2,6 @@ package io.data2viz.todo
 
 import io.data2viz.play.todo.*
 import io.data2viz.todo.fwk.*
-import kotlinx.html.div
 import kotlinx.html.js.div
 import kotlinx.html.js.section
 import org.w3c.dom.*

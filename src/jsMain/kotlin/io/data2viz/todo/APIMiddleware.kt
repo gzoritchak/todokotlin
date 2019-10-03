@@ -16,15 +16,14 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlin.browser.document
+import kotlin.browser.window
 
 class APIMiddleware : Middleware<TodoAppState, Action> {
 
 	private val client = HttpClient {
 		install(HttpCookies)
 		defaultRequest {
-			//todo load from context
-			host = "127.0.0.1"
-			port = 8080
+			host = window.location.host
 		}
 	}
 
