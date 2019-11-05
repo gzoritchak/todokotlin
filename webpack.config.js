@@ -1,13 +1,12 @@
 
-const webpack = require("webpack");
-const HtmlWebpackPlugin = require('html-webpack-plugin');
+// const webpack = require("webpack");
 const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
 const path = require("path");
 
-const dist = path.resolve(__dirname, "../data/public");
+const dist = path.resolve(__dirname, "./data/public");
 
 module.exports = {
-    entry: './build/kotlin-js-min/main/js.js',
+    entry: 'todokotlin.js',
     output: {
         filename: "[name].bundle.js",
         path: dist,
@@ -20,7 +19,7 @@ module.exports = {
     },
     resolve: {
         modules: [
-            path.resolve(__dirname, "build/kotlin-js-min/main")
+            path.resolve(__dirname, "data/public")
         ]
     },
     devtool: 'source-map',
@@ -28,5 +27,5 @@ module.exports = {
         new UglifyJSPlugin({
             sourceMap: true
         })
-    ]
+	]
 };
