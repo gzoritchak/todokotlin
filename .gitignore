@@ -2,9 +2,6 @@
 .idea/
 
 #node
-front/node_modules/
-
-front/dist/
 
 # development files
 /src/main/resources/public/index.html
@@ -12,7 +9,4 @@ front/dist/
 /.gradle/
 /build/
 
-backend/storage/*
-storage/
-kotlinx.dnq.test.2
 /node_modules/
