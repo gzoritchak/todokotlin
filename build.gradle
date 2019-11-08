@@ -171,8 +171,6 @@ if (distJar.toBoolean()) {
 }
 
 build.dependsOn(runDceJsKotlin)
-run.dependsOn(build)
-
 
 apply plugin: 'com.moowork.node'
 
@@ -185,3 +183,4 @@ task bundle(type: YarnTask, dependsOn: [runDceJsKotlin, yarnInstall]) {
 }
 
 
+run.dependsOn(bundle)
