@@ -1,5 +1,6 @@
 
 
+
 This project is a prototype of a Kotlin multiple page application that 
 shares code between server and client for rendering and state.
 
@@ -37,5 +38,6 @@ From the root directory, just launch:
  ./gradlew run
 ```
 
-## Todo
- - use new MPP plugin,
+## Using Axios instead of Ktor client
+You can switch to [axios branch](https://github.com/gzoritchak/todokotlin/tree/axios) 
+to see the differences in term of code and distribution. 
